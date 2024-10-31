@@ -41,6 +41,7 @@ class SparkAPI
 
     /**
      * Make POST API call
+     *
      * @param $uri
      * @param array $post_data
      * @return array
@@ -219,6 +220,7 @@ class SparkAPI
 
     /**
      * Get all Units with Floor plan, Status and Additional Fields
+     *
      * @return array|false
      */
     public static function getUnitsWithDetails()
