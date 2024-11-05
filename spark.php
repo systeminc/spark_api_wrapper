@@ -7,7 +7,7 @@
 
 class SparkAPI
 {
-    private static $api_key = "YOUR_SPARK_API_KEY";
+    private static $api_key = "GUFT1AASSDZZF-Y_WMEPM5KRQXJMR8DVONT-QNTM";
 
     /**
      * Make GET API call
@@ -196,6 +196,16 @@ class SparkAPI
     }
 
     /**
+     * Get all countries
+     *
+     * @return array|false
+     */
+    public static function getCountries()
+    {
+        return self::get('countries');
+    }
+
+    /**
      * Send Contact to API
      *
      * @param array $data
@@ -203,12 +213,15 @@ class SparkAPI
      */
     public static function postContact(array $data)
     {
+        self::sanitizeV1Fields($data);
+
         $response = self::post('contacts', $data);
 
         if ($response['status'] == 201) {
             return [
                 'status'  => 'success',
                 'message' => '',
+                'data' => $response['data'] ?? [],
             ];
         } else {
             return [
@@ -225,12 +238,59 @@ class SparkAPI
      */
     public static function getUnitsWithDetails()
     {
-        $units = SparkAPI::getUnits();
+        $units = self::getUnits();
 
-        SparkAPI::populateUnitsFloorplans($units);
-        SparkAPI::populateUnitsStatuses($units);
-        SparkAPI::populateUnitsAdditionalFields($units);
+        self::populateUnitsFloorplans($units);
+        self::populateUnitsStatuses($units);
+        self::populateUnitsAdditionalFields($units);
 
         return $units;
+    }
+
+
+    /**
+     * Sanitize fields from API V1 which are not supported in API V2
+     *
+     * @return array|false
+     */
+    private static function sanitizeV1Fields(array &$data)
+    {
+        // remove empty fields
+        foreach ($data as $key => $field) {
+            if (empty($field)) {
+                unset($data[$key]);
+            }
+        }
+
+        if (empty($data["additional_fields"])) {
+            $data["additional_fields"] = [];
+        }
+
+        // find or create new brokerage
+        if (!empty($data['brokerage_name'])) {
+            $brokerage = SparkAPI::getBrokerage($data['brokerage_name']);
+            $data['brokerage_id'] = $brokerage['id'];
+            unset($data['brokerage_name']);
+        }
+
+        // new format of standardized fields
+        if(isset($data['standardized_fields_attributes']) && is_array($data['standardized_fields_attributes'])) {
+            foreach ($data['standardized_fields_attributes'] as $key => $value) {
+                if (!empty($value['value'])) {
+                    $data["additional_fields"][] = [
+                        "standardized_field_id" => $key,
+                        "value" => $value['value'],
+                    ];
+                }
+            }
+        }
+
+        // new format of question answers fields
+        foreach ($data['answers'] as $key => $question) {
+            $data['question_answers'][] = [
+                'question_id' => $key,
+                'answers' => $question['answers'],
+            ];
+        }
     }
 }
