@@ -16,7 +16,7 @@ class SparkAPI
      * @param int|null $page pagination page number
      * @return mixed
      */
-    private static function get(string $uri, int $page = null)
+    private static function get(string $uri, ?int $page = null)
     {
         $curl = curl_init();
         $pagination = (strpos($uri, '?') === false ? '?' : '&') . 'per_page=100' . ($page ? '&page=' . $page : '');
@@ -188,7 +188,7 @@ class SparkAPI
             if ($create['status'] == 201) {
                 $brokerage = $create['data'];
             } else {
-                throw new Exception($create['message']);
+                throw new Exception($create['data']['error_message'] ?? 'Failed to create brokerage');
             }
         }
 
@@ -217,7 +217,8 @@ class SparkAPI
 
         $response = self::post('contacts', $data);
 
-        if ($response['status'] == 201) {
+        // 201 = created, 200 = updated existing contact (matched email).
+        if ($response['status'] >= 200 && $response['status'] < 300) {
             return [
                 'status'  => 'success',
                 'message' => '',
@@ -226,7 +227,7 @@ class SparkAPI
         } else {
             return [
                 'status'  => 'failed',
-                'message' => $response['data']['error_message'],
+                'message' => $response['data']['error_message'] ?? 'Unknown error',
             ];
         }
     }
@@ -286,11 +287,13 @@ class SparkAPI
         }
 
         // new format of question answers fields
-        foreach ($data['answers'] as $key => $question) {
-            $data['question_answers'][] = [
-                'question_id' => $key,
-                'answers' => $question['answers'],
-            ];
+        if (!empty($data['answers'])) {
+            foreach ($data['answers'] as $key => $question) {
+                $data['question_answers'][] = [
+                    'question_id' => $key,
+                    'answers' => $question['answers'],
+                ];
+            }
         }
     }
 }
