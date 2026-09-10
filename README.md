@@ -15,10 +15,10 @@ PHP 7.1+ with the cURL extension. No Composer package, no autoloader.
 
 ## Install
 
-Copy `spark.php` into the project — in our WordPress themes that is `wp-content/themes/<theme>/inits/spark.php` — and require it:
+Copy `spark.php` into the project — in our WordPress themes that is `wp-content/themes/<theme>/inc/spark.php` — and require it:
 
 ```php
-require_once get_template_directory() . '/inits/spark.php';
+require_once get_template_directory() . '/inc/spark.php';
 ```
 
 Then set the key at the top of the file:
