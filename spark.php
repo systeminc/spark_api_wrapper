@@ -42,9 +42,9 @@ class SparkAPI
     /**
      * Make POST API call
      *
-     * @param $uri
+     * @param string $uri
      * @param array $post_data
-     * @return array
+     * @return array{status:int,data:mixed,error:string}
      */
     private static function post(string $uri, array $post_data)
     {
@@ -65,11 +65,13 @@ class SparkAPI
         curl_setopt_array($curl, $curlArgs);
         $response = curl_exec($curl);
         $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($curl);
         curl_close($curl);
 
         return [
             'status' => $http_code,
             'data'   => json_decode($response, true),
+            'error'  => $curl_error,
         ];
     }
 
@@ -226,8 +228,11 @@ class SparkAPI
             ];
         } else {
             return [
-                'status'  => 'failed',
-                'message' => $response['data']['error_message'] ?? 'Unknown error',
+                'status'     => 'failed',
+                'message'    => $response['data']['error_message'] ?? 'Unknown error',
+                'code'       => $response['status'],
+                'curl_error' => $response['error'] ?? '',
+                'data'       => $response['data'],
             ];
         }
     }
